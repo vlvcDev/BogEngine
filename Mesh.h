@@ -4,6 +4,7 @@
 #include <d3d11.h>
 #include <DirectXMath.h>
 #include <vector>
+#include <string>
 
 class Mesh {
 public:
@@ -23,6 +24,8 @@ public:
     void SetPosition(float x, float y, float z);
     void SetRotation(float pitch, float yaw, float roll);
     void SetScale(float x, float y, float z);
+
+    bool LoadFromOBJFile(const std::string& filename);
 
 private:
     struct CBPerObject {

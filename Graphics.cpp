@@ -225,6 +225,16 @@ bool Graphics::Initialize(HWND hwnd, int width, int height) {
     // Set initial transformation if needed
     pyramidMesh->SetPosition(0.0f, 0.0f, -0.9f);
 
+    icosphere = new Mesh(device, context);
+
+
+    if (!icosphere->LoadFromOBJFile("icosphere.obj")) {
+        MessageBox(hwnd, L"Failed to initialize icosphere mesh!", L"Error", MB_OK);
+        return false;
+    }
+
+    icosphere->SetPosition(0.0f, 0.0f, -0.3f);
+
     // Define the input layout
     D3D11_INPUT_ELEMENT_DESC layoutDesc[] = {
         { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,   D3D11_INPUT_PER_VERTEX_DATA, 0 },
@@ -286,7 +296,7 @@ void Graphics::Update(float deltaTime) {
     projMatrix = XMMatrixPerspectiveFovLH(
         XM_PIDIV4,          // Field of view angle (45 degrees)
         aspectRatio,        // Aspect ratio
-        0.01f,               // Near clipping plane
+        0.1f,               // Near clipping plane
         200.0f              // Far clipping plane
     );
 
@@ -298,6 +308,10 @@ void Graphics::Update(float deltaTime) {
 
     // Update the pyramid mesh
     pyramidMesh->Update(deltaTime);
+
+    icosphere->SetRotation(angle, 0.0f, 0.0f);
+
+    icosphere->Update(deltaTime);
 }
 
 
@@ -327,6 +341,7 @@ void Graphics::Draw() {
 
     // Draw the pyramid mesh
     pyramidMesh->Draw(viewProjMatrix);
+    icosphere->Draw(viewProjMatrix);
 
     // Present the frame
     Present();

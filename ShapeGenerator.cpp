@@ -4,26 +4,26 @@
 #include "Mesh.h"
 
 void ShapeGenerator::CreatePyramid(std::vector<Mesh::Vertex>& vertices, std::vector<UINT>& indices) {
-    // Define the pyramid vertices
+    // Vertex array
     vertices = {
         // Base vertices
-        { -0.5f, -0.5f, -0.5f,  0.0f, 0.0f, 0.0f },  // Left-back (red)
-        {  0.5f, -0.5f, -0.5f,  0.0f, 0.0f, 0.0f },  // Right-back (green)
-        {  0.5f, -0.5f,  0.5f,  0.0f, 0.0f, 0.0f },  // Right-front (blue)
-        { -0.5f, -0.5f,  0.5f,  0.0f, 0.0f, 0.0f },  // Left-front (yellow)
+        { -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f }, // 0 Left-back
+        {  0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 0.0f }, // 1 Right-back
+        {  0.5f, -0.5f,  0.5f, 0.0f, 0.0f, 0.0f }, // 2 Right-front
+        { -0.5f, -0.5f,  0.5f, 0.0f, 0.0f, 0.0f }, // 3 Left-front
         // Apex vertex
-        {  0.0f,  0.5f,  0.0f,  1.0f, 0.0f, 1.0f }   // Top vertex (magenta)
+        {  0.0f,  0.5f,  0.0f, 1.0f, 0.0f, 1.0f }  // 4 Top vertex
     };
 
-    // Define the indices for the pyramid
+    // Index array for drawing the pyramid
     indices = {
-        // Base
+        // Base (correct as per your information)
         0, 1, 2,
         0, 2, 3,
-        // Sides
-        0, 1, 4,
-        1, 2, 4,
-        2, 3, 4,
-        3, 0, 4
+        // Sides (reorder for correct normals)
+        4, 1, 0,  // Side 1
+        4, 2, 1,  // Side 2
+        4, 3, 2,  // Side 3
+        4, 0, 3   // Side 4
     };
 }

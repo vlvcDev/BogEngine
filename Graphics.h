@@ -41,6 +41,7 @@ private:
     D3D11_VIEWPORT viewport = {};
 
     Mesh* pyramidMesh;
+    Mesh* icosphere;
 
     DirectX::XMMATRIX viewMatrix;
     DirectX::XMMATRIX projMatrix;

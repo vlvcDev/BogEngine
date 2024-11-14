@@ -20,6 +20,6 @@ PS_INPUT main(VS_INPUT input)
 {
     PS_INPUT output;
     output.position = mul(float4(input.position, 1.0f), worldViewProj);
-    output.color = (input.position + 1.0f) / 2.0f;
+    output.color = (output.position + 1.0) / 2;
     return output;
 }
