@@ -14,6 +14,7 @@ using namespace DirectX;
 #include "Mesh.h"
 #include "ShapeGenerator.h"
 #include <vector>
+#include "Window.h"
 
 
 Graphics::Graphics() {}
@@ -208,6 +209,13 @@ bool Graphics::Initialize(HWND hwnd, int width, int height) {
 
     context->PSSetShader(pixelShader, nullptr, 0);
 
+    projMatrix = XMMatrixPerspectiveFovLH(
+        XM_PIDIV4,          // Field of view angle (45 degrees)
+        aspectRatio,        // Aspect ratio
+        0.1f,               // Near clipping plane
+        200.0f              // Far clipping plane
+    );
+
     // Create the pyramid mesh
     pyramidMesh = new Mesh(device, context);
 
@@ -224,21 +232,24 @@ bool Graphics::Initialize(HWND hwnd, int width, int height) {
 
     // Set initial transformation if needed
     pyramidMesh->SetPosition(0.0f, 0.0f, -0.9f);
+    pyramidMesh->SetScale(0.1f, 0.1f, 0.1f);
 
     icosphere = new Mesh(device, context);
 
 
-    if (!icosphere->LoadFromOBJFile("icosphere.obj")) {
+    if (!icosphere->LoadFromOBJFile("fella.obj")) {
         MessageBox(hwnd, L"Failed to initialize icosphere mesh!", L"Error", MB_OK);
         return false;
     }
 
-    icosphere->SetPosition(0.0f, 0.0f, -0.3f);
+    icosphere->SetPosition(0.0f, -0.5f, -0.3f);
+    icosphere->SetScale(0.8f, 0.8f, 0.8f);
 
     // Define the input layout
     D3D11_INPUT_ELEMENT_DESC layoutDesc[] = {
         { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,   D3D11_INPUT_PER_VERTEX_DATA, 0 },
-        { "COLOR",    0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12,  D3D11_INPUT_PER_VERTEX_DATA, 0 }
+        { "NORMAL",   0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12,  D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "COLOR",    0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 24,  D3D11_INPUT_PER_VERTEX_DATA, 0 }
     };
 
     hr = device->CreateInputLayout(layoutDesc, ARRAYSIZE(layoutDesc), vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), &inputLayout);
@@ -280,25 +291,21 @@ bool Graphics::Initialize(HWND hwnd, int width, int height) {
     return true;
 }
 
-struct CBPerObject {
-    XMMATRIX worldViewProj;
-};
+void Graphics::SetViewMatrix(const DirectX::XMMATRIX& viewMatrix) {
+    this->viewMatrix = viewMatrix;
+}
+
 
 void Graphics::Update(float deltaTime) {
-    // Update view and projection matrices
-    viewMatrix = XMMatrixLookAtLH(
-        XMVectorSet(0.0f, 1.0f, -5.0f, 1.0f), // Camera position
-        XMVectorSet(0.0f, 0.0f, 0.0f, 1.0f),  // Focus point
-        XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f)   // Up direction
-    );
+    //// Update view and projection matrices
+    //viewMatrix = XMMatrixLookAtLH(
+    //    XMVectorSet(0.0f, 1.0f, -5.0f, 1.0f), // Camera position
+    //    XMVectorSet(0.0f, 0.0f, 0.0f, 1.0f),  // Focus point
+    //    XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f)   // Up direction
+    //);
 
     float aspectRatio = viewport.Width / viewport.Height;
-    projMatrix = XMMatrixPerspectiveFovLH(
-        XM_PIDIV4,          // Field of view angle (45 degrees)
-        aspectRatio,        // Aspect ratio
-        0.1f,               // Near clipping plane
-        200.0f              // Far clipping plane
-    );
+
 
     // Rotate the pyramid over time
     static float angle = 0.0f;
@@ -307,9 +314,9 @@ void Graphics::Update(float deltaTime) {
     pyramidMesh->SetRotation(angle, angle, 0.0f);
 
     // Update the pyramid mesh
-    pyramidMesh->Update(deltaTime);
+    //pyramidMesh->Update(deltaTime);
 
-    icosphere->SetRotation(angle, 0.0f, 0.0f);
+    icosphere->SetRotation(0.0f, angle, 0.0f);
 
     icosphere->Update(deltaTime);
 }
@@ -327,7 +334,7 @@ void Graphics::Present() {
 
 void Graphics::Draw() {
     // Clear the screen
-    ClearScreen(0.0f, 0.2f, 0.4f, 1.0f);
+    ClearScreen(0.0f, 0.1f, 0.2f, 1.0f);
 
     // Set the input layout
     context->IASetInputLayout(inputLayout);
@@ -337,11 +344,24 @@ void Graphics::Draw() {
     context->PSSetShader(pixelShader, nullptr, 0);
 
     // Calculate view-projection matrix
-    XMMATRIX viewProjMatrix = viewMatrix * projMatrix;
+    XMMATRIX viewProjMatrix = Window::player->GetViewMatrix() * projMatrix;
+
+    // Define the light direction movement parameters
+    float lightSpeed = 0.1f;
+    static float lightAngle = 0.0f;
+    lightAngle += lightSpeed;
+
+    // Calculate the moving light direction
+    XMFLOAT4 lightDirection;
+    lightDirection.x = 0.0f;
+    lightDirection.y = 0.0f;
+    lightDirection.z = 0.0f;
+    lightDirection.w = 1.0f;
+    // None of this lightDirection stuff works :)))
 
     // Draw the pyramid mesh
-    pyramidMesh->Draw(viewProjMatrix);
-    icosphere->Draw(viewProjMatrix);
+    pyramidMesh->Draw(viewProjMatrix, lightDirection);
+    icosphere->Draw(viewProjMatrix, lightDirection);
 
     // Present the frame
     Present();

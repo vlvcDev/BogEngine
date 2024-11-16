@@ -32,11 +32,11 @@ float4 main(PS_INPUT input) : SV_TARGET
     float3 finalColor = quantizedDiffuse * input.color;
 
     // Edge detection based on normal variation
-    float edgeThreshold = 0.6;
+    float edgeThreshold = 0.2;
     float edge = length(fwidth(normalizedNormal));
     if (edge > edgeThreshold)
     {
-        finalColor = float3(0.0, 0.0, 0.0); // Black outline
+        finalColor = float3(0.9, 0.0, 0.0); // Black outline
     }
 
     return float4(finalColor, 1.0);

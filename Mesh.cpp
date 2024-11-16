@@ -9,6 +9,7 @@ using namespace DirectX;
 #include <sstream>
 #include <string>
 #include <vector>
+#include <iostream>
 
 Mesh::Mesh(ID3D11Device* device, ID3D11DeviceContext* context)
     : device(device), context(context),
@@ -84,7 +85,7 @@ void Mesh::Update(float deltaTime) {
     worldMatrix = scaleMatrix * rotationMatrix * translationMatrix;
 }
 
-void Mesh::Draw(const DirectX::XMMATRIX& viewProjMatrix) {
+void Mesh::Draw(const DirectX::XMMATRIX& viewProjMatrix, const DirectX::XMFLOAT4& lightDirection) {
     // Bind the vertex buffer
     UINT stride = sizeof(Vertex);
     UINT offset = 0;
@@ -96,10 +97,17 @@ void Mesh::Draw(const DirectX::XMMATRIX& viewProjMatrix) {
     // Set the primitive topology
     context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
+    XMMATRIX normalMatrix = XMMatrixInverse(nullptr, worldMatrix);
+    normalMatrix = XMMatrixTranspose(normalMatrix);
+
     // Update constant buffer
     CBPerObject cb{};
     cb.worldViewProj = XMMatrixTranspose(worldMatrix * viewProjMatrix);
     cb.world = XMMatrixTranspose(worldMatrix);
+    cb.normalMatrix = normalMatrix;  // Pass the normal matrix to the shader
+    cb.lightDirection = lightDirection;
+
+
     context->UpdateSubresource(constantBuffer, 0, NULL, &cb, 0, 0);
 
     // Bind the constant buffer
@@ -115,8 +123,9 @@ bool Mesh::LoadFromOBJFile(const std::string& filename) {
         return false;
     }
 
-    std::vector<XMFLOAT3> tempVertices;  // Temporary vertex array to store positions
-    std::vector<UINT> tempIndices;       // Temporary index array
+    std::vector<XMFLOAT3> tempVertices;  // Vertex positions
+    std::vector<UINT> tempIndices;       // Indices
+    std::vector<XMFLOAT3> normals;       // Normals per vertex
 
     std::string line;
     while (std::getline(file, line)) {
@@ -152,14 +161,80 @@ bool Mesh::LoadFromOBJFile(const std::string& filename) {
         }
     }
 
-    // Convert to vertices including default color
+    // Initialize normals array
+    normals.resize(tempVertices.size(), XMFLOAT3(0.0f, 0.0f, 0.0f));
+
+    // Compute normals
+    for (size_t i = 0; i < tempIndices.size(); i += 3) {
+        UINT index0 = tempIndices[i];
+        UINT index1 = tempIndices[i + 1];
+        UINT index2 = tempIndices[i + 2];
+
+        XMFLOAT3& p0 = tempVertices[index0];
+        XMFLOAT3& p1 = tempVertices[index1];
+        XMFLOAT3& p2 = tempVertices[index2];
+
+        // Compute face normal
+        XMFLOAT3 faceNormal = CalculateNormal(p0, p1, p2);
+
+        // Add the face normal to each vertex normal
+        normals[index0].x += faceNormal.x;
+        normals[index0].y += faceNormal.y;
+        normals[index0].z += faceNormal.z;
+
+        normals[index1].x += faceNormal.x;
+        normals[index1].y += faceNormal.y;
+        normals[index1].z += faceNormal.z;
+
+        normals[index2].x += faceNormal.x;
+        normals[index2].y += faceNormal.y;
+        normals[index2].z += faceNormal.z;
+    }
+
+    // Normalize the normals
+    for (size_t i = 0; i < normals.size(); ++i) {
+        XMVECTOR n = XMLoadFloat3(&normals[i]);
+        n = XMVector3Normalize(n);
+        XMStoreFloat3(&normals[i], n);
+    }
+
+    // Create the vertices with positions, normals, and colors
     std::vector<Vertex> vertices;
-    for (const auto& v : tempVertices) {
-        Vertex vertex = { v.x, v.y, v.z, 1.0f, 1.0f, 1.0f };  // Default color: white
+    for (size_t i = 0; i < tempVertices.size(); ++i) {
+        Vertex vertex;
+        vertex.x = tempVertices[i].x;
+        vertex.y = tempVertices[i].y;
+        vertex.z = tempVertices[i].z;
+
+        vertex.nx = normals[i].x;
+        vertex.ny = normals[i].y;
+        vertex.nz = normals[i].z;
+
+        // Set default color (white)
+        vertex.r = 0.7f;
+        vertex.g = 0.7f;
+        vertex.b = 0.7f;
+
         vertices.push_back(vertex);
     }
 
     return Initialize(vertices, tempIndices);
+}
+
+
+XMFLOAT3 Mesh::CalculateNormal(XMFLOAT3 p0, XMFLOAT3 p1, XMFLOAT3 p2) {
+    XMVECTOR v0 = XMLoadFloat3(&p0);
+    XMVECTOR v1 = XMLoadFloat3(&p1);
+    XMVECTOR v2 = XMLoadFloat3(&p2);
+
+    XMVECTOR edge1 = XMVectorSubtract(v1, v0);
+    XMVECTOR edge2 = XMVectorSubtract(v2, v0);
+    XMVECTOR normal = XMVector3Cross(edge1, edge2);
+    normal = XMVector3Normalize(normal);
+
+    XMFLOAT3 n;
+    XMStoreFloat3(&n, normal);
+    return n;
 }
 
 

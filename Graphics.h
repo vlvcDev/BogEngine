@@ -4,6 +4,7 @@
 #include <d3d11.h>
 #include <DirectXMath.h>
 #include "Mesh.h"
+#include "StarBackground.h"
 
 using namespace DirectX;
 
@@ -14,11 +15,10 @@ public:
 
     bool Initialize(HWND hwnd, int width, int height);
     void Update(float deltaTime);
-    void DrawPyramid();
     void ClearScreen(float r, float g, float b, float a);
     void Present();
     void Draw();
-
+    void SetViewMatrix(const DirectX::XMMATRIX& viewMatrix);
 private:
     ID3D11Device* device = nullptr;
     ID3D11DeviceContext* context = nullptr;
@@ -38,6 +38,8 @@ private:
     ID3D11DepthStencilView* depthStencilView = nullptr;
     ID3D11DepthStencilState* depthStencilState = nullptr;
 
+    DirectX::XMMATRIX cameraViewMatrix;
+
     D3D11_VIEWPORT viewport = {};
 
     Mesh* pyramidMesh;
@@ -46,9 +48,14 @@ private:
     DirectX::XMMATRIX viewMatrix;
     DirectX::XMMATRIX projMatrix;
 
-    struct CBPerObject
-    {
-        DirectX::XMMATRIX world;
-        DirectX::XMMATRIX worldViewProj;
-    } cbPerObject;
+    // Ensure this matches the HLSL structure
+    struct CBPerObject {
+        DirectX::XMMATRIX worldViewProj; // 64 bytes
+        DirectX::XMMATRIX world;         // 64 bytes
+        DirectX::XMMATRIX normalMatrix;  // 64 bytes
+        DirectX::XMFLOAT4 lightDirection;// 16 bytes
+    }cbPerObject;
+    // Total size: 64 + 64 + 64 + 16 + 16 + 16 = 240 bytes
+    
+    StarBackground* starBackground;
 };

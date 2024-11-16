@@ -5,7 +5,7 @@
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nShowCmd) {
     // Create an instance of the Window class
-    Window mainWindow(hInstance, 800, 600);
+    Window mainWindow(hInstance, 1000, 800);
 
     // Initialize the window
     if (!mainWindow.Initialize(nShowCmd)) {
