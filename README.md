@@ -11,5 +11,6 @@ This is a 3D rendering engine made with DirectX11. This project is being develop
 - Make a vision distance for the player
 - Add enemies and simple melee combat
 - Add a scoring system
-- Better camera movement, right now rotating the camera back and forth feels janky, as if smoothed 
+- Better camera movement, right now rotating the camera back and forth feels janky, as if smoothed
+
 ![BogCaseGif](https://github.com/user-attachments/assets/2f1a5435-7cd6-40cb-9a4f-aec10440379f)
