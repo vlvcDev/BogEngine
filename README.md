@@ -3,6 +3,7 @@ This is a 3D rendering engine made with DirectX11. This project is being develop
 - Render and transform objects with vertex and face data
 - import OBJ files
 - Camera movement
+- Global Illumination w/ Dithering
 
 <br>What I want to add/improve:
 - Add a level, likely just a plane to walk on
